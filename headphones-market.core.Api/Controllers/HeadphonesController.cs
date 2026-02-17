@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MediatR;
 using headphones_market.core.Api.Model;
-using Newtonsoft.Json;
+using headphones_market.core.Api.Features.Headphones.Queries;
+using headphones_market.core.Api.Features.Headphones.Commands;
 
 namespace headphones_market.core.Api.Endpoints;
 
@@ -8,33 +10,49 @@ namespace headphones_market.core.Api.Endpoints;
 [ApiController]
 public class HeadphonesController : ControllerBase
 {
-    public HeadphonesController()
+    private readonly IMediator _mediator;
+
+    public HeadphonesController(IMediator mediator)
     {
+        _mediator = mediator;
     }
 
     [HttpGet]
-    public Task<List<Headphone>> Get()
+    public async Task<ActionResult<List<Headphone>>> Get()
     {
-        List<Headphone> items = new List<Headphone>();
-        using (StreamReader r = new StreamReader("./data/headphones.json"))
-        {
-            string json = r.ReadToEnd();
-            items = JsonConvert.DeserializeObject<List<Headphone>>(json);
-        }
-
-        return Task.FromResult(items);
+        var items = await _mediator.Send(new GetAllHeadphonesQuery());
+        return Ok(items);
     }
 
     [HttpGet("{id}")]
-    public Task<Headphone?> Get([FromRoute] int id)
+    public async Task<ActionResult<Headphone>> Get([FromRoute] int id)
     {
-        List<Headphone> items = new List<Headphone>();
-        using (StreamReader r = new StreamReader("./data/headphones.json"))
-        {
-            string json = r.ReadToEnd();
-            items = JsonConvert.DeserializeObject<List<Headphone>>(json);
-        }
+        var item = await _mediator.Send(new GetHeadphoneByIdQuery(id));
+        if (item is null) return NotFound();
+        return Ok(item);
+    }
 
-        return Task.FromResult(items.FirstOrDefault(x => x.Id == id));
+    [HttpPost]
+    public async Task<ActionResult<Headphone>> Create([FromBody] Headphone create)
+    {
+        var created = await _mediator.Send(new CreateHeadphoneCommand(create));
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] Headphone update)
+    {
+        if (id != update.Id) return BadRequest("Id in route must match Id in body.");
+        var ok = await _mediator.Send(new UpdateHeadphoneCommand(id, update));
+        if (!ok) return NotFound();
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete([FromRoute] int id)
+    {
+        var ok = await _mediator.Send(new DeleteHeadphoneCommand(id));
+        if (!ok) return NotFound();
+        return NoContent();
     }
 }
