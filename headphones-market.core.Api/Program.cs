@@ -1,5 +1,5 @@
-
 using headphones_market.core.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,13 +8,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register repository (single registration)
-builder.Services.AddSingleton<IHeadphoneRepository, JsonHeadphoneRepository>();
+// Configure EF Core with SQL Server
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<HeadphonesDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
-// If you still use HeadphoneService elsewhere, keep this registration; otherwise you can remove it.
+// Register EF-based repository and existing service
+builder.Services.AddScoped<IHeadphoneRepository, EfHeadphoneRepository>();
 builder.Services.AddScoped<headphones_market.core.Api.Services.IHeadphoneService, headphones_market.core.Api.Services.HeadphoneService>();
 
-// Correct MediatR registration for recent versions
+// MediatR registration (unchanged)
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 
 var app = builder.Build();
