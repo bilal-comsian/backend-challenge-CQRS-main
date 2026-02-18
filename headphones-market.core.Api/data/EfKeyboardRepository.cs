@@ -22,6 +22,8 @@ public class EfKeyboardRepository : IKeyboardRepository
 
     public async Task<Keyboard> AddAsync(Keyboard item)
     {
+        // Ensure database generates the identity value
+        item.Id = 0;
         var entry = await _db.Keyboards.AddAsync(item);
         await _db.SaveChangesAsync();
         return entry.Entity;
