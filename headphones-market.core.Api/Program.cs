@@ -13,8 +13,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<HeadphonesDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Register EF-based repository and existing service
+// Register EF-based repositories and existing service
 builder.Services.AddScoped<IHeadphoneRepository, EfHeadphoneRepository>();
+builder.Services.AddScoped<IKeyboardRepository, EfKeyboardRepository>();
 builder.Services.AddScoped<headphones_market.core.Api.Services.IHeadphoneService, headphones_market.core.Api.Services.HeadphoneService>();
 
 // MediatR registration (unchanged)
